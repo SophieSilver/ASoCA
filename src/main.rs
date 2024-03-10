@@ -155,6 +155,8 @@ fn main() -> eyre::Result<()> {
         .display_env_section(false)
         .install()?;
 
+    std::panic::set_hook(Box::new(utils::panic_handler));
+
     let cli = Cli::parse();
     env_logger::builder()
         .filter_level(cli.verbosity.log_level_filter())
@@ -173,10 +175,38 @@ fn main() -> eyre::Result<()> {
 }
 
 mod utils {
-    use color_eyre::eyre::{self, bail, eyre};
-    use std::time::Duration;
+    use chrono::Utc;
+    use color_eyre::{
+        eyre::{self, bail, eyre},
+        owo_colors::OwoColorize,
+    };
+    use std::{
+        backtrace::Backtrace,
+        fs,
+        panic::PanicInfo,
+        thread,
+        time::Duration,
+    };
 
     use crate::MIN_CERTIFICATE_TTL;
+
+    pub fn panic_handler(panic_info: &PanicInfo) {
+        eprintln!("{}", "ASoCA crashed!".bold().bright_red());
+
+        let current_thread = thread::current();
+        let thread_name = current_thread.name().unwrap_or("<unnamed>");
+        let backtrace = Backtrace::force_capture();
+        let panic_formatting = format!("thread '{}' {}\n{}", thread_name, panic_info, backtrace);
+
+        let formatted_datetime = Utc::now().format("%F_%H-%M-%S-%m_%9f");
+        let crash_log_filename = format!("asoca-crash-report_{}.txt", formatted_datetime);
+
+        match fs::write(&crash_log_filename, &panic_formatting) {
+            Ok(_) => eprintln!("Crash report saved at {crash_log_filename}"),
+            // fallback to outputting the report to stderr, if writing to the file fails
+            Err(_) => eprintln!("{}", panic_formatting),
+        };
+    }
 
     /// Wrapper for `humantime::parse_duration` with a friendlier error message
     pub fn parse_timespan(value: &str) -> eyre::Result<Duration> {

@@ -3,3 +3,4 @@ target
 !.gitignore
 *.pem
 subject_info.json
+asoca-crash*
