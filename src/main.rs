@@ -150,13 +150,20 @@ impl Cli {
 }
 
 fn main() -> eyre::Result<()> {
-    color_eyre::config::HookBuilder::new()
-        .display_location_section(false)
-        .display_env_section(false)
-        .install()?;
+    if cfg!(debug_assertions) {
+        // more informative errors in debug builds
+        std::env::set_var("RUST_BACKTRACE", "full");
+        color_eyre::install()?;
+    } else {
+        // less cluttering errors in release builds
+        color_eyre::config::HookBuilder::new()
+            .display_location_section(false)
+            .display_env_section(false)
+            .install()?;
 
-    std::panic::set_hook(Box::new(utils::panic_handler));
-
+        std::panic::set_hook(Box::new(utils::panic_handler));
+    }
+    
     let cli = Cli::parse();
     env_logger::builder()
         .filter_level(cli.verbosity.log_level_filter())
@@ -180,13 +187,7 @@ mod utils {
         eyre::{self, bail, eyre},
         owo_colors::OwoColorize,
     };
-    use std::{
-        backtrace::Backtrace,
-        fs,
-        panic::PanicInfo,
-        thread,
-        time::Duration,
-    };
+    use std::{backtrace::Backtrace, fs, panic::PanicInfo, thread, time::Duration};
 
     use crate::MIN_CERTIFICATE_TTL;
 
