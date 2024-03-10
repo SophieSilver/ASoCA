@@ -13,7 +13,7 @@ const RENEW_AFTER_MULTIPLIER: f64 = 0.9;
 
 /// Simple and easy to use Certificate Authority.
 ///
-/// Will generate its own private key, a self-signed root certificate, 
+/// Will generate its own private key, a self-signed root certificate,
 /// server private key and server certificate.
 #[derive(Debug, Clone, Parser)]
 #[command(version)]
@@ -150,7 +150,11 @@ impl Cli {
 }
 
 fn main() -> eyre::Result<()> {
-    color_eyre::install()?;
+    color_eyre::config::HookBuilder::new()
+        .display_location_section(false)
+        .display_env_section(false)
+        .install()?;
+
     let cli = Cli::parse();
     env_logger::builder()
         .filter_level(cli.verbosity.log_level_filter())
