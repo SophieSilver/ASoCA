@@ -106,7 +106,7 @@ cargo install --git https://github.com/SophieSilver/ASoCA
 
 An example structure of the subject info JSON document:
 
-```json
+```jsonc
 {
     "subject_attributes": {
         // All subject attributes that x509 certificates support
